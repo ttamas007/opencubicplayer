@@ -12,8 +12,11 @@ Compared with the upstream Open Cubic Player port, this fork currently highlight
 
 - ready-to-download Windows release package built with MinGW and published from this repository
 - runtime player and screen settings are written back to `ocp.ini` on exit and restored on the next start
+- the file selector saves the last opened folder path and starts there again on the next launch
 - the MP3 embedded cover-art mode controlled with `C` now stays in the selected mode across track changes and restarts
 - `<` and `>` are remapped to left and right cursor actions for easier keyboard navigation on the current layout
+- the active drive letter in the file selector is immediately usable on startup
+- continuous on-screen hotkey help is shown in both the playback and browser/file-selector style views
 - the packaged Windows bundle is synced with the validated runtime plugin set used during local testing
 
 Unix port of [Open Cubic Player](https://www.cubic.org/player/), which is a text-based player with some few graphical views.
