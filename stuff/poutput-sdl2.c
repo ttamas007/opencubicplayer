@@ -25,6 +25,10 @@
 #include <stdlib.h>
 #include <time.h>
 #include <SDL.h>
+#ifdef _WIN32
+#include <windows.h>
+#include <SDL_syswm.h>
+#endif
 #include "types.h"
 #include "boot/console.h"
 #include "boot/psetting.h"
@@ -92,6 +96,92 @@ static SDL_Window *current_window = NULL;
 static SDL_Renderer *current_renderer = NULL;
 static SDL_Texture *current_texture = NULL;
 
+#ifdef _WIN32
+static HWND sdl2_hwnd = NULL;
+static WNDPROC sdl2_prev_wndproc = NULL;
+enum { SDL2_AUDIO_MOVE_TIMER_ID = 0x4f4350 };
+
+static LRESULT CALLBACK sdl2_windowproc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	if ((uMsg == WM_TIMER) && (wParam == SDL2_AUDIO_MOVE_TIMER_ID))
+	{
+		tmTimerHandler (pollTypeAudio);
+		return 0;
+	}
+
+	switch (uMsg)
+	{
+		case WM_ENTERSIZEMOVE:
+			SetTimer (hwnd, SDL2_AUDIO_MOVE_TIMER_ID, 20, NULL);
+			break;
+		case WM_EXITSIZEMOVE:
+			KillTimer (hwnd, SDL2_AUDIO_MOVE_TIMER_ID);
+			break;
+		case WM_NCDESTROY:
+			KillTimer (hwnd, SDL2_AUDIO_MOVE_TIMER_ID);
+			break;
+	}
+
+	if (sdl2_prev_wndproc)
+	{
+		return CallWindowProc (sdl2_prev_wndproc, hwnd, uMsg, wParam, lParam);
+	}
+	return DefWindowProc (hwnd, uMsg, wParam, lParam);
+}
+
+static void sdl2_uninstall_audio_move_hook(void)
+{
+	if (sdl2_hwnd && sdl2_prev_wndproc)
+	{
+		KillTimer (sdl2_hwnd, SDL2_AUDIO_MOVE_TIMER_ID);
+		SetWindowLongPtr (sdl2_hwnd, GWLP_WNDPROC, (LONG_PTR)sdl2_prev_wndproc);
+	}
+	sdl2_hwnd = NULL;
+	sdl2_prev_wndproc = NULL;
+}
+
+static void sdl2_install_audio_move_hook(void)
+{
+	SDL_SysWMinfo wmInfo;
+	HWND hwnd;
+	WNDPROC prev;
+
+	if (!current_window)
+	{
+		return;
+	}
+
+	SDL_VERSION(&wmInfo.version);
+	if (!SDL_GetWindowWMInfo (current_window, &wmInfo))
+	{
+		return;
+	}
+	if (wmInfo.subsystem != SDL_SYSWM_WINDOWS)
+	{
+		return;
+	}
+
+	hwnd = wmInfo.info.win.window;
+	if (!hwnd)
+	{
+		return;
+	}
+	if ((sdl2_hwnd == hwnd) && sdl2_prev_wndproc)
+	{
+		return;
+	}
+
+	sdl2_uninstall_audio_move_hook();
+	prev = (WNDPROC)SetWindowLongPtr (hwnd, GWLP_WNDPROC, (LONG_PTR)sdl2_windowproc);
+	if (!prev)
+	{
+		return;
+	}
+	sdl2_hwnd = hwnd;
+	sdl2_prev_wndproc = prev;
+}
+#endif
+
 static int last_text_height;
 static int last_text_width;
 
@@ -137,6 +227,11 @@ static void sdl2_close_window(void)
 #ifdef SDL2_DEBUG
 	fprintf (stderr, "[SDL2-video] sdl2_close_window()");
 #endif
+
+#ifdef _WIN32
+	sdl2_uninstall_audio_move_hook();
+#endif
+
 	if (current_texture)
 	{
 		SDL_DestroyTexture (current_texture);
@@ -386,6 +481,14 @@ static void set_state_textmode (const int fullscreen, int width, int height, con
 		SDL_ClearError();
 		exit(1);
 	}
+
+#ifdef _WIN32
+	sdl2_install_audio_move_hook();
+#endif
+
+#ifdef _WIN32
+	sdl2_install_audio_move_hook();
+#endif
 
 	SDL_GetWindowSize (current_window, &width, &height);
 

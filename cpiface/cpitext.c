@@ -58,7 +58,7 @@ void cpiTextUnregisterMode (struct cpifaceSessionAPI_t *cpifaceSession, struct c
 {
 	struct cpitextmoderegstruct **iter;
 
-	for (iter = &cpiTextModes; *iter; *iter = (*iter)->nextdef)
+	for (iter = &cpiTextModes; *iter; iter = &(*iter)->next)
 	{
 		if (*iter == m)
 		{

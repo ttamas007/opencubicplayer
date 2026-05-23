@@ -418,9 +418,9 @@ static int sndhProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 			cpifaceSession->KeyHelp ('P', "Start/stop pause with fade");
 			cpifaceSession->KeyHelp (KEY_CTRL_HOME, "Restart Song");
 			cpifaceSession->KeyHelp (KEY_CTRL_P, "Start/stop pause");
-			cpifaceSession->KeyHelp ('<', "Jump to previous track");
+			cpifaceSession->KeyHelp (KEY_LEFT, "Jump to previous track");
 			cpifaceSession->KeyHelp (KEY_CTRL_LEFT, "Jump to previous track");
-			cpifaceSession->KeyHelp ('>', "Jump to next track");
+			cpifaceSession->KeyHelp (KEY_RIGHT, "Jump to next track");
 			cpifaceSession->KeyHelp (KEY_CTRL_RIGHT, "Jump to next track");
 			return 0;
 		case 'p': case 'P':
@@ -433,6 +433,7 @@ static int sndhProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 			sndhStartTune (cpifaceSession, stat.SubTune_onqueue);
 			cpifaceSession->ResetSongTimer (cpifaceSession);
 			break;
+		case KEY_LEFT:
 		case '<':
 		case KEY_CTRL_LEFT: /* curses.h can't do these */
 			if (stat.SubTune_onqueue > 1)
@@ -441,6 +442,7 @@ static int sndhProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 				cpifaceSession->ResetSongTimer (cpifaceSession);
 			}
 			break;
+		case KEY_RIGHT:
 		case '>':
 		case KEY_CTRL_RIGHT: /* curses.h can't do these */
 			if (stat.SubTune_onqueue < stat.SubTunes)

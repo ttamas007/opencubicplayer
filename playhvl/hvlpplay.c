@@ -81,8 +81,8 @@ static int hvlProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			cpifaceSession->KeyHelp ('p', "Start/stop pause with fade");
 			cpifaceSession->KeyHelp ('P', "Start/stop pause with fade");
 			cpifaceSession->KeyHelp (KEY_CTRL_P, "Start/stop pause");
-			cpifaceSession->KeyHelp ('<', "Previous sub-song");
-			cpifaceSession->KeyHelp ('>', "Next sub-song");
+			cpifaceSession->KeyHelp (KEY_LEFT, "Previous sub-song");
+			cpifaceSession->KeyHelp (KEY_RIGHT, "Next sub-song");
 			cpifaceSession->KeyHelp (KEY_CTRL_HOME, "Restart song");
 			return 0;
 		case 'p': case 'P':
@@ -95,10 +95,12 @@ static int hvlProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			hvlRestartSong();
 			cpifaceSession->ResetSongTimer (cpifaceSession);
 			break;
+		case KEY_LEFT:
 		case '<':
 			hvlPrevSubSong();
 			cpifaceSession->ResetSongTimer (cpifaceSession);
 			break;
+		case KEY_RIGHT:
 		case '>':
 			hvlNextSubSong();
 			cpifaceSession->ResetSongTimer (cpifaceSession);

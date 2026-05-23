@@ -81,9 +81,9 @@ static int ayProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 			cpifaceSession->KeyHelp ('P', "Start/stop pause with fade");
 			cpifaceSession->KeyHelp (KEY_CTRL_HOME, "Restart Song");
 			cpifaceSession->KeyHelp (KEY_CTRL_P, "Start/stop pause");
-			cpifaceSession->KeyHelp ('<', "Jump to previous track");
+			cpifaceSession->KeyHelp (KEY_LEFT, "Jump to previous track");
 			cpifaceSession->KeyHelp (KEY_CTRL_LEFT, "Jump to previous track");
-			cpifaceSession->KeyHelp ('>', "Jump to next track");
+			cpifaceSession->KeyHelp (KEY_RIGHT, "Jump to next track");
 			cpifaceSession->KeyHelp (KEY_CTRL_RIGHT, "Jump to next track");
 			return 0;
 		case 'p': case 'P':
@@ -97,6 +97,7 @@ static int ayProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 			ayStartSong (cpifaceSession, csg);
 			cpifaceSession->ResetSongTimer (cpifaceSession);
 			break;
+		case KEY_LEFT:
 		case '<':
 		case KEY_CTRL_LEFT: /* curses.h can't do these */
 			csg=globinfo.track-1;
@@ -106,6 +107,7 @@ static int ayProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t ke
 				cpifaceSession->ResetSongTimer (cpifaceSession);
 			}
 			break;
+		case KEY_RIGHT:
 		case '>':
 		case KEY_CTRL_RIGHT: /* curses.h can't do these */
 			csg=globinfo.track+1;

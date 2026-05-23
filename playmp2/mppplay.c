@@ -69,14 +69,22 @@ static int mpegProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 		case KEY_ALT_K:
 			cpifaceSession->KeyHelp ('p', "Start/stop pause with fade");
 			cpifaceSession->KeyHelp ('P', "Start/stop pause with fade");
+			cpifaceSession->KeyHelp ('c', "Change ID3 picture view mode");
+			cpifaceSession->KeyHelp ('C', "Change ID3 picture view mode");
 			cpifaceSession->KeyHelp (KEY_CTRL_P, "Start/stop pause");
-			cpifaceSession->KeyHelp ('<', "Jump back (big)");
+			cpifaceSession->KeyHelp (KEY_LEFT, "Jump back (big)");
 			cpifaceSession->KeyHelp (KEY_CTRL_LEFT, "Jump back (big)");
-			cpifaceSession->KeyHelp ('>', "Jump forward (big)");
+			cpifaceSession->KeyHelp (KEY_RIGHT, "Jump forward (big)");
 			cpifaceSession->KeyHelp (KEY_CTRL_RIGHT, "Jump forward (big)");
 			cpifaceSession->KeyHelp (KEY_CTRL_UP, "Jump back (small)");
 			cpifaceSession->KeyHelp (KEY_CTRL_DOWN, "Jump forward (small)");
 			cpifaceSession->KeyHelp (KEY_CTRL_HOME, "Jump to start of track");
+			return 0;
+		case 'c': case 'C':
+			if (ID3PicProcessKey (cpifaceSession, key))
+			{
+				break;
+			}
 			return 0;
 		case 'p': case 'P':
 			cpifaceSession->TogglePauseFade (cpifaceSession);
@@ -90,6 +98,7 @@ static int mpegProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 		case KEY_CTRL_DOWN:
 			mpegSetPos(mpegGetPos()+mpegrate);
 			break;
+		case KEY_LEFT:
 		case '<':
 		case KEY_CTRL_LEFT:
 			{
@@ -102,6 +111,7 @@ static int mpegProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 				mpegSetPos(newpos);
 			}
 			break;
+		case KEY_RIGHT:
 		case '>':
 		case KEY_CTRL_RIGHT:
 			{

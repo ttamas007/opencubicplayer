@@ -45,7 +45,12 @@
   balance=0               ; -vb0
   reverb=0                ; -vr0
   chorus=0                ; -vc0
+  speed=100               ; playback speed in percent
+  pitch=100               ; playback pitch in percent
   surround=off            ; -vs-
+  splock=off              ; lock speed and pitch together
+  useecho=off             ; keep echo/reverb state enabled
+  viewfx=off              ; show fx page instead of pan/balance page
   filter=2                ; -vf2   (FOI)
 
 [screen]                  ; default screen section
@@ -59,6 +64,7 @@
 ; palette=0 2 2 2 2 2 2 a 2 2 a a a a a a
 ; palette=1 2 4 7 5 3 6 7 9 a c f d b e f
   analyser=on
+  id3pic=3                ; 0=off, 1=left, 2=right, 3=wide
   mvoltype=1              ; 0=none, 1=big, 2=side (only in >132 column modes)
   pattern=on
   insttype=2              ; 0=none, 1=short, 2=long, 3=side (only in >132 column modes)

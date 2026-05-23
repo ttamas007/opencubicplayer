@@ -67,8 +67,15 @@ static int ssInit (const struct configAPI_t *configAPI)
   per        = configAPI->GetProfileInt   (                     "commandline_v", "c",        per, 10);
   set.chorus = (per>=100) ? 64 : (per<=-100) ? -64 : (per*64/100);
 
-  set.speed = 256;
-  set.pitch = 256;
+  per        = configAPI->GetProfileInt2  (configAPI->SoundSec, "sound",         "speed",   100, 10);
+  set.speed  = (per<=6) ? 16 : (per>=800) ? 2048 : (per*256/100);
+
+  per        = configAPI->GetProfileInt2  (configAPI->SoundSec, "sound",         "pitch",   100, 10);
+  set.pitch  = (per<=6) ? 16 : (per>=800) ? 2048 : (per*256/100);
+
+  set.useecho = configAPI->GetProfileBool2 (configAPI->SoundSec, "sound",        "useecho", 0, 0);
+  set.splock  = configAPI->GetProfileBool2 (configAPI->SoundSec, "sound",        "splock",  0, 0);
+  set.viewfx  = configAPI->GetProfileBool2 (configAPI->SoundSec, "sound",        "viewfx",  0, 0);
 
   return errOk;
 }

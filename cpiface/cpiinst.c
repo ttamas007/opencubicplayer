@@ -396,6 +396,11 @@ OCP_INTERNAL void cpiInstInit (void)
 	InstType = cfGetProfileInt2(cfScreenSec, "screen", "insttype", 3, 10) & 3;
 }
 
+OCP_INTERNAL void cpiInstDone (void)
+{
+	cfSetProfileInt (cfScreenSec, "insttype", InstType, 10);
+}
+
 void plUseInstruments (struct cpifaceSessionAPI_t *cpifaceSession, struct insdisplaystruct *x)
 {
 	cpifaceSessionAPI.InstScroll=0;

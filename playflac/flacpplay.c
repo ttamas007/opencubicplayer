@@ -65,9 +65,9 @@ static int flacProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 			cpifaceSession->KeyHelp ('p', "Start/stop pause with fade");
 			cpifaceSession->KeyHelp ('P', "Start/stop pause with fade");
 			cpifaceSession->KeyHelp (KEY_CTRL_P, "Start/stop pause");
-			cpifaceSession->KeyHelp ('<', "Jump back (big)");
+			cpifaceSession->KeyHelp (KEY_LEFT, "Jump back (big)");
 			cpifaceSession->KeyHelp (KEY_CTRL_LEFT, "Jump back (big)");
-			cpifaceSession->KeyHelp ('>', "Jump forward (big)");
+			cpifaceSession->KeyHelp (KEY_RIGHT, "Jump forward (big)");
 			cpifaceSession->KeyHelp (KEY_CTRL_RIGHT, "Jump forward (big)");
 			cpifaceSession->KeyHelp (KEY_CTRL_UP, "Jump back (small)");
 			cpifaceSession->KeyHelp (KEY_CTRL_DOWN, "Jump forward (small)");
@@ -85,6 +85,7 @@ static int flacProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 		case KEY_CTRL_DOWN:
 			flacSetPos (flacGetPos (cpifaceSession) + flacrate);
 			break;
+		case KEY_LEFT:
 		case '<':
 		case KEY_CTRL_LEFT:
 			{
@@ -98,6 +99,7 @@ static int flacProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 					flacSetPos(oldpos-skip);
 			}
 			break;
+		case KEY_RIGHT:
 		case '>':
 		case KEY_CTRL_RIGHT:
 			{

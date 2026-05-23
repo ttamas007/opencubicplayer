@@ -176,8 +176,8 @@ Keys | Description
 :--- | :----------
 <kbd>Enter</kbd> | Next file from the playlist, if playlist is empty it opens the file-browser.
 <kbd>f</kbd> | File-browser.
-<kbd><</kbd> | Rewind.
-<kbd>></kbd> | Fast Forward.
+<kbd>left</kbd> | Rewind.
+<kbd>right</kbd> | Fast Forward.
 <kbd>a</kbd> | Text FFT analyzer, <kbd>A</kbd>: toggle FFT analyzer, <kbd>tab</kbd>: toggle colors.
 <kbd>b</kbd> | Phase viewer.
 <kbd>c</kbd> | Text Channel viewer.

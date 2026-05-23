@@ -211,6 +211,11 @@ OCP_INTERNAL void cpiChanInit (void)
 	plChannelType = cfGetProfileInt2(cfScreenSec, "screen", "channeltype", 3, 10)&3;
 }
 
+OCP_INTERNAL void cpiChanDone (void)
+{
+	cfSetProfileInt (cfScreenSec, "channeltype", plChannelType, 10);
+}
+
 
 void plUseChannels (struct cpifaceSessionAPI_t *cpifaceSession, void (*Display)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, enum cpiChanWidth width, int i, int compoMode))
 {

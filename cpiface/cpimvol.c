@@ -254,5 +254,6 @@ OCP_INTERNAL void cpiMVolInit (void)
 
 OCP_INTERNAL void cpiMVolDone (void)
 {
+	cfSetProfileInt (cfScreenSec, "mvoltype", plMVolType, 10);
 	cpiTextUnregisterDefMode(&cpiTModeMVol);
 }

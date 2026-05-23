@@ -139,6 +139,100 @@ static char curmodehandle[9];
 
 static struct interfacestruct plOpenCP;
 
+static unsigned int cpiStatusScrollTick = 0;
+static char *cpiStatusScrollBuffer = 0;
+static unsigned int cpiStatusScrollBufferLength = 0;
+
+#define CPI_STATUS_SCROLL_GAP 8
+
+static const char *cpiGetPlaybackStatusHotkeyText(void)
+{
+	return " hotkeys: <Esc> exit | <Enter> next song | <Ins>/<F> file selector | <Ctrl-J>/<Ctrl-K> prev/next song | <Ctrl-L> loop | <Alt-C> setup | <Alt-K> keyboard help | <\x1b>/<\x1a> seek | <D> shell ";
+}
+
+static void cpiDisplayPlaybackStatusHotkeys(int y, int width)
+{
+	const char *text = cpiGetPlaybackStatusHotkeyText();
+	const unsigned int len = strlen(text);
+	const unsigned int cycle = len + CPI_STATUS_SCROLL_GAP;
+	unsigned int offset;
+	int i;
+
+	if (width <= 0)
+	{
+		return;
+	}
+
+	if ((unsigned int)(width + 1) > cpiStatusScrollBufferLength)
+	{
+		char *newbuffer = realloc(cpiStatusScrollBuffer, width + 1);
+		if (!newbuffer)
+		{
+			displayvoid(y, 0, width);
+			return;
+		}
+		cpiStatusScrollBuffer = newbuffer;
+		cpiStatusScrollBufferLength = width + 1;
+	}
+
+	displaychr(y, 0, 0x17, ' ', width);
+
+	if (!cycle)
+	{
+		return;
+	}
+
+	offset = (cpiStatusScrollTick / 4) % cycle;
+	for (i = 0; i < width; i++)
+	{
+		unsigned int pos = (offset + i) % cycle;
+		cpiStatusScrollBuffer[i] = (pos < len) ? text[pos] : ' ';
+	}
+	cpiStatusScrollBuffer[width] = 0;
+	displaystr(y, 0, 0x17, cpiStatusScrollBuffer, width);
+}
+
+static void cpiPersistRuntimeState(void)
+{
+	struct cpifaceSessionPrivate_t *f = &cpifaceSessionAPI;
+
+	if (curmode)
+	{
+		cpiGetMode (curmodehandle);
+	}
+
+	set.pan = f->mcpset.pan;
+	set.bal = f->mcpset.bal;
+	set.vol = f->mcpset.vol;
+	set.speed = f->mcpset.speed;
+	set.pitch = f->mcpset.pitch;
+	set.amp = f->mcpset.amp;
+	set.reverb = f->mcpset.reverb;
+	set.chorus = f->mcpset.chorus;
+	set.srnd = f->mcpset.srnd;
+	set.filter = f->mcpset.filter;
+	set.useecho = f->mcpset.useecho;
+	set.splock = f->mcpset.splock;
+	set.viewfx = f->mcpset.viewfx;
+
+	cfSetProfileBool (cfScreenSec, "compomode", plCompoMode);
+	cfSetProfileString (cfScreenSec, "startupmode", curmodehandle[0] ? curmodehandle : "text");
+
+	cfSetProfileInt (cfSoundSec, "amplify", (f->mcpset.amp * 100) / 64, 10);
+	cfSetProfileInt (cfSoundSec, "volume", (f->mcpset.vol * 100) / 64, 10);
+	cfSetProfileInt (cfSoundSec, "balance", (f->mcpset.bal * 100) / 64, 10);
+	cfSetProfileInt (cfSoundSec, "panning", (f->mcpset.pan * 100) / 64, 10);
+	cfSetProfileBool (cfSoundSec, "surround", f->mcpset.srnd);
+	cfSetProfileInt (cfSoundSec, "filter", f->mcpset.filter, 10);
+	cfSetProfileInt (cfSoundSec, "reverb", (f->mcpset.reverb * 100) / 64, 10);
+	cfSetProfileInt (cfSoundSec, "chorus", (f->mcpset.chorus * 100) / 64, 10);
+	cfSetProfileInt (cfSoundSec, "speed", (f->mcpset.speed * 100) / 256, 10);
+	cfSetProfileInt (cfSoundSec, "pitch", (f->mcpset.pitch * 100) / 256, 10);
+	cfSetProfileBool (cfSoundSec, "splock", f->mcpset.splock);
+	cfSetProfileBool (cfSoundSec, "useecho", f->mcpset.useecho);
+	cfSetProfileBool (cfSoundSec, "viewfx", f->mcpset.viewfx);
+}
+
 int cpiSetGraphMode(int big)
 {
 	if (plSetGraphMode(big) < 0)
@@ -1919,6 +2013,8 @@ void cpiDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct cpifaceSessionPrivate_t *f = (struct cpifaceSessionPrivate_t *)cpifaceSession;
 
+	cpiStatusScrollTick++;
+
 #if (CONSOLE_MIN_Y < 5)
 # error cpiDrawGStrings() requires CONSOLE_MIN_Y >= 5
 #endif
@@ -2207,13 +2303,17 @@ static int plmpInit (const struct configAPI_t *configAPI)
 static void plmpClose (void)
 {
 	cpiAnalDone ();
+	cpiChanDone ();
 	cpiGraphDone ();
+	cpiInstDone ();
 	cpiWurfel2Done ();
 	cpiLinksDone ();
 	cpiMVolDone ();
 	cpiPhaseDone ();
 	cpiScopeDone ();
+	cpiTrackDone ();
 	cpiVolCtrlDone ();
+	cfStoreConfig ();
 	plOpenCPPicDone ();
 }
 
@@ -2435,6 +2535,7 @@ static void plmpCloseFile (void)
 
 	if (curplayer)
 	{
+		cpiPersistRuntimeState ();
 		cpiGetMode (curmodehandle);
 		curplayer->CloseFile (&cpifaceSessionAPI.Public);
 		while (cpiModes)
@@ -2741,6 +2842,19 @@ static interfaceReturnEnum plmpDrawScreen(void)
 					}
 				}
 				if (mod) break; /* forward the break */
+				if ((((key == KEY_LEFT) || (key == KEY_RIGHT) || (key == 'c') || (key == 'C')) && cpifaceSessionAPI.Public.ProcessKey))
+				{
+#ifdef KEYBOARD_DEBUG
+					fprintf (stderr, "plmpDrawScreen: cpifaceSessionAPI.Public.ProcessKey() before cpiChanProcessKey() for arrow key\n");
+#endif
+					if (cpifaceSessionAPI.Public.ProcessKey (&cpifaceSessionAPI.Public, key))
+					{
+#ifdef KEYBOARD_DEBUG
+						fprintf (stderr, "plmpDrawScreen:   key was swallowed\n");
+#endif
+						break;
+					}
+				}
 				if (cpifaceSessionAPI.Public.LogicalChannelCount)
 				{
 #ifdef KEYBOARD_DEBUG
@@ -2754,7 +2868,7 @@ static interfaceReturnEnum plmpDrawScreen(void)
 						break;
 					}
 				}
-				if (cpifaceSessionAPI.Public.ProcessKey)
+				if (((key != KEY_LEFT) && (key != KEY_RIGHT)) && cpifaceSessionAPI.Public.ProcessKey)
 				{
 #ifdef KEYBOARD_DEBUG
 					fprintf (stderr, "plmpDrawScreen: cpifaceSessionAPI.Public.ProcessKey()\n");
@@ -2793,6 +2907,7 @@ superbreak:
 	{
 		curmode->Draw(&cpifaceSessionAPI.Public);
 	}
+	cpiDisplayPlaybackStatusHotkeys(plScrHeight - 1, plScrWidth);
 	framelock();
 
 	cpifaceSessionAPI.Public.SelectedChannelChanged = 0;

@@ -109,9 +109,9 @@ static int gmdProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			cpifaceSession->KeyHelp (KEY_CTRL_UP, "Jump back (small)");
 			cpifaceSession->KeyHelp (KEY_CTRL_DOWN, "Jump forward (small)");
 			cpifaceSession->KeyHelp (KEY_CTRL_P, "Start/stop pause");
-			cpifaceSession->KeyHelp ('<', "Jump back (big)");
+			cpifaceSession->KeyHelp (KEY_LEFT, "Jump back (big)");
 			cpifaceSession->KeyHelp (KEY_CTRL_LEFT, "Jump back (big)");
-			cpifaceSession->KeyHelp ('>', "Jump forward (big)");
+			cpifaceSession->KeyHelp (KEY_RIGHT, "Jump forward (big)");
 			cpifaceSession->KeyHelp (KEY_CTRL_RIGHT, "Jump forward (big)");
 			cpifaceSession->KeyHelp (KEY_CTRL_HOME, "Jump start of track");
 			return 0;
@@ -126,11 +126,13 @@ static int gmdProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			mpSetPosition (cpifaceSession, 0, 0);
 			cpifaceSession->ResetSongTimer (cpifaceSession);
 			break;
+		case KEY_LEFT:
 		case '<':
 		case KEY_CTRL_LEFT:
 			mpGetPosition(&pat, &row);
 			mpSetPosition (cpifaceSession, pat-1, 0);
 			break;
+		case KEY_RIGHT:
 		case '>':
 		case KEY_CTRL_RIGHT:
 			mpGetPosition(&pat, &row);

@@ -1205,8 +1205,9 @@ static int _bootup(int argc, char *argv[], const char *HomePath, const char *Con
 		fprintf(stderr, "\033[33m\033[1mOpen Cubic Player for Unix \033[32mv" VERSION "\033[33m, compiled on %s, %s\n", compiledate, compiletime);
 		fprintf(stderr, "\033[31m\033[22mPorted to \033[1m\033[32mUnix \033[31m\033[22mby \033[1mStian Skjelstad\033[0m\n");
 	} else {
-		fprintf(stderr, "Open Cubic Player for Unix v" VERSION ", compiled on %s, %s\n", compiledate, compiletime);
+		fprintf(stderr, "Open Cubic Player for Unix v" VERSION ", compiled on %s, %s\n", compiledate, compiletime); 
 		fprintf(stderr, "Ported to Unix by Stian Skjelstad\n");
+		fprintf(stderr, "Windows standalone port by code975 - www.digitaldevops.hu\n");
 	}
 
 #ifdef GCC_411_RUNTIMECHECK

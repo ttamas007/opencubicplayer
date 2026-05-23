@@ -338,5 +338,6 @@ OCP_INTERNAL void cpiAnalInit (void)
 
 OCP_INTERNAL void cpiAnalDone (void)
 {
+	cfSetProfileBool (cfScreenSec, "analyser", analactive);
 	cpiTextUnregisterDefMode(&cpiTModeAnal);
 }

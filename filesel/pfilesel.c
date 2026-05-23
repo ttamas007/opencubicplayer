@@ -111,13 +111,74 @@ static struct modlist *currentdir=NULL;
 static struct modlist *playlist=NULL;
 
 #define dirdbcurdirpath (dmCurDrive->cwd->dirdb_ref)
+static unsigned int fsStatusScrollTick = 0;
+static char *fsStatusScrollBuffer = 0;
+static unsigned int fsStatusScrollBufferLength = 0;
+
+#define FS_STATUSBAR_LINES 2
+#define FS_STATUS_SCROLL_GAP 8
+#define FS_LAST_PLAYLIST_FILENAME "ocplastplaylist.pls"
 static char *curmask;
 
 struct dmDrive *dmCurDrive=0;
 
 static int fsSavePlayList(const struct modlist *ml);
+static void fsPersistRuntimeState(void);
+static int fsLoadPlaylistFile(const char *filename);
 
 static void fsDraw(void);
+
+static const char *fsGetStatusHotkeyText(int editmode)
+{
+	if (editmode)
+	{
+		return " hotkeys: <\x1b>/<\x1a> choose a field | <Enter> edits the selected value | <Shift-Tab>/<Alt-E> leaves edit mode | <Alt-Enter> edits the path | <F1> help | <Alt-K> keyboard help | <Esc> exits ";
+	}
+
+	return " hotkeys: <Tab> switches file list and playlist | <Shift-Tab>/<Alt-E> toggles the editor | <\x1a>/<Ins> adds selection to playlist | <\x1b>/<Del> removes from playlist | <Ctrl-\x1a> adds current directory | <Ctrl-\x1b> removes current directory | <Ctrl-\x18>/<Ctrl-\x19> moves playlist items | <Ctrl-PgUp>/<Ctrl-PgDn> moves by a page | <Alt-P> saves playlist | <F1> help | <Alt-C> setup ";
+}
+
+static void fsDisplayStatusHotkeys(int y, int width, int editmode)
+{
+	const char *text = fsGetStatusHotkeyText(editmode);
+	const unsigned int len = strlen(text);
+	const unsigned int cycle = len + FS_STATUS_SCROLL_GAP;
+	unsigned int offset;
+	int i;
+
+	if (width <= 0)
+	{
+		return;
+	}
+
+	if ((unsigned int)(width + 1) > fsStatusScrollBufferLength)
+	{
+		char *newbuffer = realloc(fsStatusScrollBuffer, width + 1);
+		if (!newbuffer)
+		{
+			displayvoid(y, 0, width);
+			return;
+		}
+		fsStatusScrollBuffer = newbuffer;
+		fsStatusScrollBufferLength = width + 1;
+	}
+
+	displaychr(y, 0, 0x17, ' ', width);
+
+	if (!cycle)
+	{
+		return;
+	}
+
+	offset = (fsStatusScrollTick / 4) % cycle;
+	for (i = 0; i < width; i++)
+	{
+		unsigned int pos = (offset + i) % cycle;
+		fsStatusScrollBuffer[i] = (pos < len) ? text[pos] : ' ';
+	}
+	fsStatusScrollBuffer[width] = 0;
+	displaystr(y, 0, 0x17, fsStatusScrollBuffer, width);
+}
 
 static struct interfacestruct *plInterfaces;
 
@@ -750,6 +811,56 @@ static void addfiles_dir (void *token, struct ocpdir_t *dir)
 {
 }
 
+static int fsLoadPlaylistFile(const char *filename)
+{
+	uint32_t dirdb_ref;
+
+#ifdef _WIN32
+	dirdb_ref = dirdbResolvePathWithBaseAndRef (dmCurDrive->cwd->dirdb_ref, filename, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_pfilesel);
+#else
+	dirdb_ref = dirdbResolvePathWithBaseAndRef (dmCurDrive->cwd->dirdb_ref, filename, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_TILDE_USER, dirdb_use_pfilesel);
+#endif
+
+	if (dirdb_ref != DIRDB_NOPARENT)
+	{
+		struct ocpfile_t *file = 0;
+		filesystem_resolve_dirdb_file (dirdb_ref, 0, &file);
+		dirdbUnref(dirdb_ref, dirdb_use_pfilesel); dirdb_ref = DIRDB_NOPARENT;
+
+		if (file)
+		{
+			struct ocpdir_t *dir = 0;
+			const char *childpath;
+			char *curext;
+
+			dirdbGetName_internalstr (file->dirdb_ref, &childpath);
+			getext_malloc (childpath, &curext);
+			if (curext)
+			{
+				dir = m3u_check (0, file, curext);
+				if (!dir)
+				{
+					dir = pls_check (0, file, curext);
+				}
+				free (curext); curext = 0;
+				if (dir)
+				{
+					if (!(fsReadDir (playlist, dir, curmask, RD_PUTRSUBS)))
+					{
+						/* ignore errors */
+					}
+					dir->unref (dir); dir = 0;
+					file->unref (file); file = 0;
+					return 1;
+				}
+			}
+			file->unref (file); file = 0;
+		}
+	}
+
+	return 0;
+}
+
 static int initRootDir(const struct configAPI_t *configAPI, const char *sec)
 {
 	int count;
@@ -806,7 +917,6 @@ static int initRootDir(const struct configAPI_t *configAPI, const char *sec)
 	{
 		char buffer[32];
 		const char *filename;
-		uint32_t dirdb_ref;
 
 		sprintf(buffer, "playlist%d", count);
 		if (!(filename = configAPI->GetProfileString2(sec, "CommandLine_Files", buffer, NULL)))
@@ -814,46 +924,7 @@ static int initRootDir(const struct configAPI_t *configAPI, const char *sec)
 			break;
 		}
 
-#ifdef _WIN32
-		dirdb_ref = dirdbResolvePathWithBaseAndRef (dmCurDrive->cwd->dirdb_ref, filename, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_pfilesel);
-#else
-		dirdb_ref = dirdbResolvePathWithBaseAndRef (dmCurDrive->cwd->dirdb_ref, filename, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_TILDE_USER, dirdb_use_pfilesel);
-#endif
-
-		if (dirdb_ref != DIRDB_NOPARENT)
-		{
-			struct ocpfile_t *file = 0;
-			filesystem_resolve_dirdb_file (dirdb_ref, 0, &file);
-			dirdbUnref(dirdb_ref, dirdb_use_pfilesel); dirdb_ref = DIRDB_NOPARENT;
-
-			if (file)
-			{
-				struct ocpdir_t *dir = 0;
-				const char *childpath;
-				char *curext;
-
-				dirdbGetName_internalstr (file->dirdb_ref, &childpath);
-				getext_malloc (childpath, &curext);
-				if (curext)
-				{
-					dir = m3u_check (0, file, curext);
-					if (!dir)
-					{
-						dir = pls_check (0, file, curext);
-					}
-					free (curext); curext = 0;
-					if (dir)
-					{
-						if (!(fsReadDir (playlist, dir, curmask, RD_PUTRSUBS)))
-						{
-							// ignore errors
-						}
-						dir->unref (dir); dir = 0;
-					}
-					file->unref (file); file = 0;
-				}
-			}
-		}
+		fsLoadPlaylistFile (filename);
 	}
 
 	/* change dir, if a path= is given in [fileselector], we default to . */
@@ -894,7 +965,110 @@ static int initRootDir(const struct configAPI_t *configAPI, const char *sec)
 		}
 	}
 
+	if (!playlist->num)
+	{
+		char *savedplaylist = malloc (strlen (configAPI->ConfigHomePath) + strlen (FS_LAST_PLAYLIST_FILENAME) + 1);
+		if (savedplaylist)
+		{
+			sprintf (savedplaylist, "%s%s", configAPI->ConfigHomePath, FS_LAST_PLAYLIST_FILENAME);
+			fsLoadPlaylistFile (savedplaylist);
+			free (savedplaylist);
+		}
+	}
+
 	return 1;
+}
+
+static void fsPersistRuntimeState(void)
+{
+	const char *sec;
+	char *currentpath = 0;
+	char *playlistpath = 0;
+	struct osfile_t *f = 0;
+	unsigned int i;
+	char linebuffer[64];
+
+	if (!dmCurDrive || !dmCurDrive->cwd)
+	{
+		return;
+	}
+
+	sec = cfGetProfileString(cfConfigSec, "fileselsec", "fileselector");
+
+	cfSetProfileInt(cfScreenSec, "screentype", plScrType, 10);
+	cfSetProfileBool(sec, "randomplay", fsListScramble);
+	cfSetProfileBool(sec, "playonce", fsListRemove);
+	cfSetProfileBool(sec, "loop", fsLoopMods);
+	cfSetProfileBool(sec, "scanmodinfo", fsScanNames);
+	cfSetProfileBool(sec, "scanarchives", fsScanArcs);
+	cfSetProfileBool(sec, "scaninarcs", fsScanInArc);
+	cfSetProfileBool(sec, "writeinfo", fsWriteModInfo);
+	cfSetProfileBool(sec, "editwin", fsEditWin);
+	cfSetProfileBool(sec, "typecolors", fsColorTypes);
+	cfSetProfileBool(sec, "putarchives", fsPutArcs);
+	cfSetProfileBool(sec, "showallfiles", fsShowAllFiles);
+	cfSetProfileInt("screen", "fps", fsFPS, 10);
+
+#ifdef _WIN32
+	dirdbGetFullname_malloc (dmCurDrive->cwd->dirdb_ref, &currentpath, DIRDB_FULLNAME_BACKSLASH);
+#else
+	dirdbGetFullname_malloc (dmCurDrive->cwd->dirdb_ref, &currentpath, 0);
+#endif
+	if (currentpath)
+	{
+		cfSetProfileString(sec, "path", currentpath);
+		free (currentpath);
+	}
+
+	playlistpath = malloc (strlen (cfConfigHomePath) + strlen (FS_LAST_PLAYLIST_FILENAME) + 1);
+	if (!playlistpath)
+	{
+		return;
+	}
+	sprintf (playlistpath, "%s%s", cfConfigHomePath, FS_LAST_PLAYLIST_FILENAME);
+
+	f = osfile_open_readwrite (playlistpath, 0, 0);
+	if (f)
+	{
+		snprintf (linebuffer, sizeof (linebuffer),
+		          "[playlist]\n"
+		          "NumberOfEntries=%d\n", playlist ? playlist->num : 0);
+		osfile_write (f, linebuffer, strlen (linebuffer));
+
+		if (playlist)
+		{
+			for (i=0; i<playlist->num; i++)
+			{
+				char *npath;
+				struct modlistentry *m = modlist_get(playlist, i);
+				snprintf (linebuffer, sizeof (linebuffer), "File%d=", i+1);
+				osfile_write (f, linebuffer, strlen (linebuffer));
+				if (m && m->file)
+				{
+#ifdef _WIN32
+					npath = dirdbDiffPath (dirdbcurdirpath, m->file->dirdb_ref, DIRDB_DIFF_WINDOWS_SLASH);
+#else
+					npath = dirdbDiffPath (dirdbcurdirpath, m->file->dirdb_ref, 0);
+#endif
+					if (npath)
+					{
+						osfile_write (f, npath, strlen (npath));
+						free (npath);
+					}
+				}
+#ifdef _WIN32
+				osfile_write (f, "\r\n", 2);
+#else
+				osfile_write (f, "\n", 1);
+#endif
+			}
+		}
+		osfile_truncate_at (f, osfile_getpos (f));
+		osfile_close (f);
+	}
+	free (playlistpath);
+
+	cfStoreConfig();
 }
 
 static struct modlistentry *nextplay=NULL;
@@ -1401,6 +1575,8 @@ int fsInit(void)
 
 void fsClose(void)
 {
+	fsPersistRuntimeState();
+
 	if (currentdir)
 	{
 		modlist_free(currentdir);
@@ -2239,9 +2415,12 @@ static void fsShowDirBottom132Dir (int Y, int selectd, const struct modlistentry
 static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int firstp, unsigned int selectp, int selectd, int selecte, const struct modlistentry *mle, int playlistactive)
 {
 	unsigned int i;
+	const int editmode = (selectd >= 0) || (selecte >= 0);
 
 	unsigned int vrelpos= ~0;
 	unsigned int prelpos= ~0;
+
+	fsStatusScrollTick++;
 
 	if (currentdir->num>dirwinheight)
 		vrelpos=dirwinheight*currentdir->pos/currentdir->num;
@@ -2332,15 +2511,6 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 		free (npath); npath = 0;
 	}
 
-	if (plScrWidth <= 90)
-	{
-		displaystr (plScrHeight-1, 0, 0x17, " quickfind: [            ]    press F1 for help, or ALT-C for basic setup", plScrWidth);
-		displaystr_utf8_overflowleft (plScrHeight-1, 13, 0x1f, quickfind, 12);
-	} else {
-		displaystr (plScrHeight-1, 0, 0x17, " quickfind: [                        ]    press F1 for help, or ALT-C for basic setup", plScrWidth);
-		displaystr_utf8_overflowleft (plScrHeight-1, 13, 0x1f, quickfind, 24);
-	}
-
 	for (i=0; i<dirwinheight; i++)
 	{
 		struct modlistentry *m;
@@ -2370,6 +2540,17 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 				displayfile(i+3, 0, plScrWidth, m, ((firstp+i)!=selectp)?0:(selecte<0)?1:2);
 			}
 		}
+	}
+
+	fsDisplayStatusHotkeys(plScrHeight - FS_STATUSBAR_LINES, plScrWidth, editmode);
+	displaychr(plScrHeight - 1, 0, 0x17, ' ', plScrWidth);
+	if (plScrWidth <= 90)
+	{
+		displaystr (plScrHeight-1, 0, 0x17, " quickfind: [            ]    press F1 for help, or ALT-C for basic setup", plScrWidth);
+		displaystr_utf8_overflowleft (plScrHeight-1, 13, 0x1f, quickfind, 12);
+	} else {
+		displaystr (plScrHeight-1, 0, 0x17, " quickfind: [                        ]    press F1 for help, or ALT-C for basic setup", plScrWidth);
+		displaystr_utf8_overflowleft (plScrHeight-1, 13, 0x1f, quickfind, 24);
 	}
 }
 
@@ -3792,6 +3973,7 @@ static void fsDraw(void)
 	struct modlistentry *m;
 
 	dirwinheight=plScrHeight-4;
+	dirwinheight=plScrHeight-(2 + FS_STATUSBAR_LINES + 1);
 	if (fsEditWin||editmode)
 		dirwinheight-=(plScrWidth>=132)?5:6;
 
@@ -3871,7 +4053,7 @@ signed int fsFileSelect(void)
 		struct modlistentry *m;
 
 superbreak:
-		dirwinheight=plScrHeight-4;
+		dirwinheight=plScrHeight-(2 + FS_STATUSBAR_LINES + 1);
 		if (fsEditWin||editmode)
 			dirwinheight-=(plScrWidth>=132)?5:6;
 

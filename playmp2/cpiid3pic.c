@@ -43,6 +43,57 @@ static int ID3PicFontSizeY;
 static void *ID3PicHandle;
 static int ID3PicLastSerial;
 static int ID3PicCurrentIndex;
+static int ID3PicLoadedFromConfig;
+
+static int ID3PicModeEnabled(void)
+{
+	return ID3PicActive != 0;
+}
+
+static void ID3PicStoreState(struct cpifaceSessionAPI_t *cpifaceSession)
+{
+	cpifaceSession->configAPI->SetProfileInt (cpifaceSession->configAPI->ScreenSec, "id3pic", ID3PicActive, 10);
+	cpifaceSession->configAPI->StoreConfig ();
+}
+
+static void ID3PicApplyModeChange(struct cpifaceSessionAPI_t *cpifaceSession, int switchfocus)
+{
+	ID3PicStoreState (cpifaceSession);
+	if (switchfocus && ID3PicActive)
+	{
+		cpifaceSession->cpiTextSetMode (cpifaceSession, "id3pic");
+	} else {
+		cpifaceSession->cpiTextRecalc (cpifaceSession);
+	}
+}
+
+OCP_INTERNAL int ID3PicProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
+{
+	if (!cpifaceSession->console->TextGUIOverlay)
+	{
+		return 0;
+	}
+
+	switch (key)
+	{
+		case 'c': case 'C':
+			if (!ID3PicActive)
+			{
+				ID3PicActive = 1;
+				ID3PicApplyModeChange (cpifaceSession, 1);
+			} else {
+				ID3PicActive = (ID3PicActive + 1) % 4;
+				if ((ID3PicActive == 3) && (cpifaceSession->console->TextWidth < 132))
+				{
+					ID3PicActive = 0;
+				}
+				ID3PicApplyModeChange (cpifaceSession, 0);
+			}
+			return 1;
+	}
+
+	return 0;
+}
 
 struct ID3_pic_raw_t
 {
@@ -269,6 +320,18 @@ static int Refresh_ID3Pictures (struct cpifaceSessionAPI_t *cpifaceSession, stru
 static void ID3PicSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int xpos, int wid, int ypos, int hgt)
 {
 	int i;
+
+	if (!ID3PicModeEnabled())
+	{
+		ID3PicVisible = 0;
+		if (ID3PicHandle)
+		{
+			cpifaceSession->console->Driver->TextOverlayRemove (ID3PicHandle);
+			ID3PicHandle = 0;
+		}
+		return;
+	}
+
 	ID3PicVisible = 1;
 
 	if (ID3PicHandle)
@@ -396,21 +459,14 @@ static int ID3PicIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 			cpifaceSession->KeyHelp ('C', "Enable ID3 picture viewer");
 			break;
 		case 'c': case 'C':
-			if (!ID3PicActive)
-			{
-				ID3PicActive=(ID3PicActive+1)%4;
-				if ((ID3PicActive==3) && (cpifaceSession->console->TextWidth < 132))
-				{
-					ID3PicActive=2;
-				}
-			}
-			cpifaceSession->cpiTextSetMode (cpifaceSession, "id3pic");
-			return 1;
+			return ID3PicProcessKey (cpifaceSession, key);
 		case 'x': case 'X':
 			ID3PicActive=3;
+			ID3PicApplyModeChange (cpifaceSession, 0);
 			break;
 		case KEY_ALT_X:
 			ID3PicActive=2;
+			ID3PicApplyModeChange (cpifaceSession, 0);
 			break;
 	}
 	return 0;
@@ -473,13 +529,7 @@ static int ID3PicAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 
 			break;
 		case 'c': case 'C':
-			ID3PicActive=(ID3PicActive+1)%4;
-			if ((ID3PicActive==3) && (cpifaceSession->console->TextWidth < 132))
-			{
-				ID3PicActive=0;
-			}
-			cpifaceSession->cpiTextRecalc (cpifaceSession);
-			break;
+			return ID3PicProcessKey (cpifaceSession, key);
 		default:
 			return 0;
 	}
@@ -504,11 +554,15 @@ static int ID3PicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 			break;
 		case cpievInit:
 			ID3PicLastSerial = -1;
+			if (!ID3PicLoadedFromConfig)
+			{
+				ID3PicActive = cpifaceSession->configAPI->GetProfileInt2 (cpifaceSession->configAPI->ScreenSec, "screen", "id3pic", 3, 10) & 3;
+				ID3PicLoadedFromConfig = 1;
+			}
 			if (cpifaceSession->console->TextGUIOverlay)
 			{
 				mpegGetID3(&ID3);
 				Refresh_ID3Pictures (cpifaceSession, ID3);
-				ID3PicActive=3;
 			}
 			break;
 		case cpievClose:
@@ -519,7 +573,7 @@ static int ID3PicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 			}
 			break;
 		case cpievOpen:
-			if (ID3PicVisible && (!ID3PicHandle) && cpifaceSession->console->TextGUIOverlay)
+			if (ID3PicModeEnabled() && ID3PicVisible && (!ID3PicHandle) && cpifaceSession->console->TextGUIOverlay)
 			{
 				if (ID3Pictures[ID3PicCurrentIndex].scaled_data_bgra)
 				{
@@ -546,6 +600,7 @@ static int ID3PicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 			}
 			break;
 		case cpievDone:
+			ID3PicStoreState (cpifaceSession);
 			if (ID3PicHandle)
 			{
 				cpifaceSession->console->Driver->TextOverlayRemove (ID3PicHandle);
@@ -567,5 +622,11 @@ OCP_INTERNAL void ID3PicInit (struct cpifaceSessionAPI_t *cpifaceSession)
 
 OCP_INTERNAL void ID3PicDone (struct cpifaceSessionAPI_t *cpifaceSession)
 {
+	if (ID3PicHandle)
+	{
+		cpifaceSession->console->Driver->TextOverlayRemove (ID3PicHandle);
+		ID3PicHandle = 0;
+	}
+	ID3PicVisible = 0;
 	cpifaceSession->cpiTextUnregisterMode (cpifaceSession, &cpiID3Pic);
 }

@@ -74,9 +74,9 @@ static int oggProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 			cpifaceSession->KeyHelp ('p', "Start/stop pause with fade");
 			cpifaceSession->KeyHelp ('P', "Start/stop pause with fade");
 			cpifaceSession->KeyHelp (KEY_CTRL_P, "Start/stop pause");
-			cpifaceSession->KeyHelp ('<', "Jump back (big)");
+			cpifaceSession->KeyHelp (KEY_LEFT, "Jump back (big)");
 			cpifaceSession->KeyHelp (KEY_CTRL_LEFT, "Jump back (big)");
-			cpifaceSession->KeyHelp ('>', "Jump forward (big)");
+			cpifaceSession->KeyHelp (KEY_RIGHT, "Jump forward (big)");
 			cpifaceSession->KeyHelp (KEY_CTRL_RIGHT, "Jump forward (big)");
 			cpifaceSession->KeyHelp (KEY_CTRL_UP, "Jump back (small)");
 			cpifaceSession->KeyHelp (KEY_CTRL_DOWN, "Jump forward (small)");
@@ -94,6 +94,7 @@ static int oggProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 		case KEY_CTRL_DOWN:
 			oggSetPos (cpifaceSession, oggGetPos (cpifaceSession) + oggrate);
 			break;
+		case KEY_LEFT:
 		case '<':
 		case KEY_CTRL_LEFT:
 			{
@@ -106,6 +107,7 @@ static int oggProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t k
 				oggSetPos (cpifaceSession, newpos);
 			}
 			break;
+		case KEY_RIGHT:
 		case '>':
 		case KEY_CTRL_RIGHT:
 			{

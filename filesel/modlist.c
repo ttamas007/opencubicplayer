@@ -187,7 +187,7 @@ void modlist_append_drive (struct modlist *modlist, struct dmDrive *drive)
 		return;
 	}
 
-	entry.dir = drive->cwd; /* modlist_append will do a ref */
+	entry.dir = drive->basedir; /* selecting a drive letter should always jump to the drive root */
 	entry.flags |= MODLIST_FLAG_DRV;
 	dirdbGetName_internalstr (drive->basedir->dirdb_ref, &childpath);
 	utf8_XdotY_name (8, 3, entry.utf8_8_dot_3, childpath);

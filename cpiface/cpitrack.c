@@ -901,3 +901,8 @@ OCP_INTERNAL void cpiTrackInit (void)
 {
 	plTrackActive=cfGetProfileBool2(cfScreenSec, "screen", "pattern", 1, 1);
 }
+
+OCP_INTERNAL void cpiTrackDone (void)
+{
+	cfSetProfileBool (cfScreenSec, "pattern", plTrackActive);
+}

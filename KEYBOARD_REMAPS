@@ -1,5 +1,5 @@
 ctrl-enter -> alt-enter
-ctrl-right -> >
-ctrl-left  -> <
+ctrl-right -> right
+ctrl-left  -> left
 ctrl-f9    -> |   (song message)
 ctrl-f12   -> \

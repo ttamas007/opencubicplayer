@@ -31,5 +31,6 @@ OCP_INTERNAL void ID3InfoInit (struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void ID3InfoDone (struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void ID3PicInit (struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void ID3PicDone (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL int ID3PicProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key);
 
 #endif
