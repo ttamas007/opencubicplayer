@@ -6,6 +6,8 @@ This repository is a fork of [mywave82/opencubicplayer](https://github.com/mywav
 
 Prebuilt Windows package: [opencubicplayer-windows-mingw-v3.3.8.zip](https://github.com/ttamas007/opencubicplayer/releases/download/v3.3.8/opencubicplayer-windows-mingw-v3.3.8.zip)
 
+If you try the Windows build, please report bugs or feedback in the GitHub issue tracker for this fork.
+
 ## Differences In This Fork
 
 Compared with the upstream Open Cubic Player port, this fork currently highlights these user-visible differences:
