@@ -1045,10 +1045,11 @@ static void fsPersistRuntimeState(void)
 				osfile_write (f, linebuffer, strlen (linebuffer));
 				if (m && m->file)
 				{
+					npath = 0;
 #ifdef _WIN32
-					npath = dirdbDiffPath (dirdbcurdirpath, m->file->dirdb_ref, DIRDB_DIFF_WINDOWS_SLASH);
+					dirdbGetFullname_malloc (m->file->dirdb_ref, &npath, DIRDB_FULLNAME_BACKSLASH);
 #else
-					npath = dirdbDiffPath (dirdbcurdirpath, m->file->dirdb_ref, 0);
+					dirdbGetFullname_malloc (m->file->dirdb_ref, &npath, 0);
 #endif
 					if (npath)
 					{

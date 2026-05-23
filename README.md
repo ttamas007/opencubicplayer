@@ -4,7 +4,7 @@ This repository is a fork of [mywave82/opencubicplayer](https://github.com/mywav
 
 ## Windows Download
 
-Prebuilt Windows package: [opencubicplayer-windows-mingw-v3.3.7.zip](https://github.com/ttamas007/opencubicplayer/releases/download/v3.3.7/opencubicplayer-windows-mingw-v3.3.7.zip)
+Prebuilt Windows package: [opencubicplayer-windows-mingw-v3.3.8.zip](https://github.com/ttamas007/opencubicplayer/releases/download/v3.3.8/opencubicplayer-windows-mingw-v3.3.8.zip)
 
 ## Differences In This Fork
 
@@ -12,6 +12,7 @@ Compared with the upstream Open Cubic Player port, this fork currently highlight
 
 - ready-to-download Windows release package built with MinGW and published from this repository
 - runtime player and screen settings are written back to `ocp.ini` on exit and restored on the next start
+- the current assembled playlist is saved on exit and restored on the next start
 - the file selector saves the last opened folder path and starts there again on the next launch
 - the MP3 embedded cover-art mode controlled with `C` now stays in the selected mode across track changes and restarts
 - `<` and `>` are remapped to left and right cursor actions for easier keyboard navigation on the current layout
