@@ -17,6 +17,7 @@ Compared with the upstream Open Cubic Player port, this fork currently highlight
 - `<` and `>` are remapped to left and right cursor actions for easier keyboard navigation on the current layout
 - the active drive letter in the file selector is immediately usable on startup
 - continuous on-screen hotkey help is shown in both the playback and browser/file-selector style views
+- playback was adjusted so music keeps playing during window move and resize operations
 - the packaged Windows bundle is synced with the validated runtime plugin set used during local testing
 
 Unix port of [Open Cubic Player](https://www.cubic.org/player/), which is a text-based player with some few graphical views.
