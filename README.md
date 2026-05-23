@@ -4,7 +4,7 @@ This repository is a fork of [mywave82/opencubicplayer](https://github.com/mywav
 
 ## Windows Download
 
-Prebuilt Windows package: [opencubicplayer-windows-mingw-v3.3.6.zip](opencubicplayer-windows-mingw-v3.3.6.zip)
+Prebuilt Windows package: [opencubicplayer-windows-mingw-v3.3.6.zip](https://github.com/ttamas007/opencubicplayer/releases/download/v3.3.6/opencubicplayer-windows-mingw-v3.3.6.zip)
 
 Unix port of [Open Cubic Player](https://www.cubic.org/player/), which is a text-based player with some few graphical views.
 Visual output can be done through nCurses, Linux console (VCSA + FrameBuffer), X11 or SDL.
