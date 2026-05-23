@@ -11,6 +11,7 @@ Prebuilt Windows package: [opencubicplayer-windows-mingw-v3.3.8.zip](https://git
 Compared with the upstream Open Cubic Player port, this fork currently highlights these user-visible differences:
 
 - ready-to-download Windows release package built with MinGW and published from this repository
+- config and runtime data are stored in the program directory so the Windows build stays portable and easy to move
 - runtime player and screen settings are written back to `ocp.ini` on exit and restored on the next start
 - the current assembled playlist is saved on exit and restored on the next start
 - the file selector saves the last opened folder path and starts there again on the next launch

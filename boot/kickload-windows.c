@@ -527,7 +527,6 @@ static int runocp (int argc, char *argv[])
 int main(int argc, char *argv[])
 {
 	int retval;
-	char *path;
 	uint16_t wt[32767+1]; /* SHGetFolderPathW requires MAX_PATH, GetEnvironmentVariableW can require 32767+1 */
 	DWORD r;
 
@@ -561,45 +560,6 @@ int main(int argc, char *argv[])
 	signal(SIGFPE, sigsegv);
 	signal(SIGILL, sigsegv);
 	signal(SIGINT, sigsegv);
-
-	/* SHGetKnownFolderPath is better, but requires Windows Vista */
-	wt[0] = 0;
-	if (SHGetFolderPathW (NULL, CSIDL_APPDATA, NULL, 0, wt) != S_OK)
-	{
-		fprintf (stderr, "Failed to retrieve %%APPDATA%%\n");
-		return -1;
-	}
-	assert (wt[0]);
-	path = utf16_to_utf8 (wt);
-	_cfConfigHomePath = malloc (strlen (path) + 1 +  strlen("OpenCubicPlayer\\Config\\") + 1);
-	_cfDataHomePath = malloc (strlen (path) + 1 + strlen("OpenCubicPlayer\\Data\\") + 1);
-	sprintf (
-		_cfConfigHomePath,
-		"%s%s%s",
-		path,
-		path[strlen(path)-1] != '\\' ? "\\" : "",
-		"OpenCubicPlayer\\Config\\"
-	);
-	sprintf (
-		_cfDataHomePath,
-		"%s%s%s",
-		path,
-		path[strlen(path)-1] != '\\' ? "\\" : "",
-		"OpenCubicPlayer\\Data\\"
-	);
-	free (path);
-	path = 0;
-
-#ifdef KICKSTART_DEBUG
-	fprintf (stderr, "cfConfigHomePath set to %s\n", _cfConfigHomePath);
-	fprintf (stderr, "cfDataHomePath set to %s\n", _cfDataHomePath);
-#endif
-
-	if (mkdir_r (_cfConfigHomePath) ||
-	    mkdir_r (_cfDataHomePath))
-	{
-		return -1;
-	}
 
 	r = GetEnvironmentVariableW (L"HOME", wt, 32767 + 1);
 	if ((r >= 1) && (r >= 32767))
@@ -688,9 +648,25 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	_cfConfigHomePath = strdup (_cfProgramPath);
+	_cfDataHomePath = strdup (_cfProgramPath);
+	if (!_cfConfigHomePath || !_cfDataHomePath)
+	{
+		fprintf (stderr, "malloc() failed\n");
+		return -1;
+	}
+
 #ifdef KICKSTART_DEBUG
+	fprintf (stderr, "cfConfigHomePath set to %s\n", _cfConfigHomePath);
+	fprintf (stderr, "cfDataHomePath set to %s\n", _cfDataHomePath);
 	fprintf (stderr, "cfProgramPath set to %s\n", _cfProgramPath);
 #endif
+
+	if (mkdir_r (_cfConfigHomePath) ||
+	    mkdir_r (_cfDataHomePath))
+	{
+		return -1;
+	}
 
 	if (!(_cfDataPath=locate_ocp_hlp()))
 	{
