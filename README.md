@@ -1,5 +1,11 @@
 # Open Cubic Player
 
+This repository is a fork of [mywave82/opencubicplayer](https://github.com/mywave82/opencubicplayer), which is the actively maintained Unix/MinGW port of the original Open Cubic Player.
+
+## Windows Download
+
+Prebuilt Windows package: [opencubicplayer-windows-mingw-v3.3.6.zip](opencubicplayer-windows-mingw-v3.3.6.zip)
+
 Unix port of [Open Cubic Player](https://www.cubic.org/player/), which is a text-based player with some few graphical views.
 Visual output can be done through nCurses, Linux console (VCSA + FrameBuffer), X11 or SDL.
 This port can be compiled for various different Unix-based operating systems, including MinGW compilers.
