@@ -147,7 +147,7 @@ static unsigned int cpiStatusScrollBufferLength = 0;
 
 static const char *cpiGetPlaybackStatusHotkeyText(void)
 {
-	return " hotkeys: <Esc> exit | <Enter> next song | <Ins>/<F> file selector | <Ctrl-J>/<Ctrl-K> prev/next song | <Ctrl-L> loop | <Alt-C> setup | <Alt-K> keyboard help | <\x1b>/<\x1a> seek | <D> shell ";
+	return " hotkeys: <Esc> exit | <Shift-Enter>/<Enter> prev/next song | <Ins>/<F> file selector | <Ctrl-J>/<Ctrl-K> prev/next song | <Ctrl-L> loop | <Alt-C> setup | <Alt-K> keyboard help | <\x1b>/<\x1a> seek | <D> shell ";
 }
 
 static void cpiDisplayPlaybackStatusHotkeys(int y, int width)
@@ -2775,6 +2775,8 @@ static interfaceReturnEnum plmpDrawScreen(void)
 			case KEY_ESC:
 				plEscTick = clock_ms();
 				break;
+			case KEY_SHIFT_ENTER:
+				return interfaceReturnPrevManuel;
 			case _KEY_ENTER:
 				return interfaceReturnNextManuel;
 			case 'f': case 'F':
@@ -2811,6 +2813,7 @@ static interfaceReturnEnum plmpDrawScreen(void)
 			#endif
 			case KEY_ALT_K:
 				cpiKeyHelp(KEY_ESC, "Exit");
+				cpiKeyHelp(KEY_SHIFT_ENTER, "Previous song");
 				cpiKeyHelp(_KEY_ENTER, "Next song");
 				cpiKeyHelp(KEY_INSERT, "Open file selected");
 				cpiKeyHelp('f', "Open file selector");

@@ -133,6 +133,7 @@ static struct cpiKeyHelpKeyName KeyNames[] =
 	{KEY_CTRL_INSERT, "ctrl+insert"},
 	{KEY_DELETE, "delete"},
 	{KEY_INSERT, "insert"},
+	{KEY_SHIFT_ENTER, "shift+enter"},
 	{KEY_ALT_ENTER, "alt+enter"},
 	{KEY_CTRL_ENTER, "ctrl+enter"},
 	{'a', "a"},

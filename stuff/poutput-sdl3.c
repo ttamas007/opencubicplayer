@@ -833,6 +833,9 @@ struct keytranslate_t translate[] =
 struct keytranslate_t translate_shift[] =
 {
 	{SDLK_TAB,          KEY_SHIFT_TAB},
+	{SDLK_RETURN,       KEY_SHIFT_ENTER},
+	{SDLK_RETURN2,      KEY_SHIFT_ENTER},
+	{SDLK_KP_ENTER,     KEY_SHIFT_ENTER},
 	{SDLK_LESS,         '>'},
 	{SDLK_COMMA,        '<'},
 	{SDLK_MINUS,        '?'},
