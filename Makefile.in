@@ -11,7 +11,7 @@ endif
 SUBDIRS+=playsid playwav playxm playym stuff
 SUBDIRS+=mingw
 
-.PHONY: all clean subdirs $(SUBDIRS)
+.PHONY: all clean subdirs runtime-autoload windows-release-refresh $(SUBDIRS)
 
 include boot/Makefile-static
 include cpiface/Makefile-static
@@ -32,7 +32,32 @@ libocp_so+=$(STATIC_OBJECTS)
 endif
 libocp_end_so=$(LIBOCP_END_OBJECTS)
 
-all: subdirs ocp$(EXE_SUFFIX) ocp.hlp libocp$(LIB_SUFFIX)
+RUNTIME_AUTOLOAD_SUBDIRS=$(filter-out boot doc mingw,$(SUBDIRS))
+
+all: subdirs runtime-autoload ocp$(EXE_SUFFIX) ocp.hlp libocp$(LIB_SUFFIX)
+
+runtime-autoload: subdirs
+ifeq ($(WINDOWS),1)
+	mkdir -p "$(TOPDIR)autoload"
+	for i in $(RUNTIME_AUTOLOAD_SUBDIRS) ; do \
+	       $(MAKE) -C $$i TOPDIR=../$(TOPDIR) DESTDIR="../$(TOPDIR)" LIBDIROCP= install || exit 1 ;\
+	done
+	for i in "$(TOPDIR)autoload"/[0-9][0-9]-*@LIB_SUFFIX@ ; do \
+	       test -e "$$i" || continue ; \
+	       legacy=`basename "$$i" | sed -e 's/^[0-9][0-9]-//'` ; \
+	       rm -f "$(TOPDIR)autoload/$$legacy" ; \
+	done
+endif
+
+windows-release-refresh: ocp$(EXE_SUFFIX) libocp$(LIB_SUFFIX) ocp.hlp runtime-autoload
+ifeq ($(WINDOWS),1)
+	mkdir -p "$(TOPDIR)OCP_Release/autoload"
+	$(CP) ocp$(EXE_SUFFIX) "$(TOPDIR)OCP_Release"
+	$(CP) libocp$(LIB_SUFFIX) "$(TOPDIR)OCP_Release"
+	$(CP) ocp.hlp "$(TOPDIR)OCP_Release"
+	$(CP) ocp.ini "$(TOPDIR)OCP_Release"
+	$(CP) autoload/* "$(TOPDIR)OCP_Release/autoload/"
+endif
 
 install:
 	mkdir -p "$(DESTDIR)$(DOCDIR)"
